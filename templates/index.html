@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Screening System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            padding-top: 50px;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0 !important;
+            padding: 30px;
+            text-align: center;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 15px;
+            transition: border-color 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.05);
+        }
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .text-analyzer {
+            margin-top: 30px;
+        }
+        .prediction-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 5px solid #667eea;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: rgba(0,0,0,0.1);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain"></i> AI Resume Screening
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="/">
+                    <i class="fas fa-upload"></i> Resume Analysis
+                </a>
+                <a class="nav-link" href="/job_eligibility">
+                    <i class="fas fa-briefcase"></i> Job Eligibility
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h1 class="mb-0">
+                            <i class="fas fa-file-alt"></i>
+                            AI Resume Screening System
+                        </h1>
+                        <p class="mb-0 mt-3">Upload your resume and get instant job category predictions</p>
+                    </div>
+                    <div class="card-body p-5">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- File Upload Section -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4><i class="fas fa-upload"></i> Upload Resume File</h4>
+                                <form action="/upload" method="post" enctype="multipart/form-data">
+                                    <div class="upload-area" id="uploadArea">
+                                        <i class="fas fa-cloud-upload-alt feature-icon"></i>
+                                        <h5>Drag & Drop your resume here</h5>
+                                        <p class="text-muted">or click to browse</p>
+                                        <input type="file" name="file" id="fileInput" accept=".pdf,.docx,.txt" required style="display: none;">
+                                        <small class="text-muted">Supported formats: PDF, DOCX, TXT</small>
+                                    </div>
+                                    <div class="mt-3" id="fileInfo" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-file"></i>
+                                            <span id="fileName"></span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">
+                                        <i class="fas fa-search"></i> Analyze Resume
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h4><i class="fas fa-edit"></i> Or Paste Resume Text</h4>
+                                <div class="text-analyzer">
+                                    <textarea id="resumeText" class="form-control" rows="8" placeholder="Paste your resume text here..."></textarea>
+                                    <button type="button" class="btn btn-primary btn-lg w-100 mt-3" onclick="analyzeText()">
+                                        <i class="fas fa-search"></i> Analyze Text
+                                    </button>
+                                </div>
+                                <div id="textResult" style="display: none;" class="prediction-result">
+                                    <h5><i class="fas fa-chart-line"></i> Prediction Results</h5>
+                                    <div id="textPrediction"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Features Section -->
+                        <div class="row mt-5">
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-robot feature-icon"></i>
+                                <h5>AI-Powered</h5>
+                                <p class="text-muted">Advanced machine learning algorithms for accurate categorization</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-tachometer-alt feature-icon"></i>
+                                <h5>High Accuracy</h5>
+                                <p class="text-muted">Ensemble model achieving maximum prediction accuracy</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-lightning-bolt feature-icon"></i>
+                                <h5>Instant Results</h5>
+                                <p class="text-muted">Get predictions in seconds with confidence scores</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <i class="fas fa-briefcase feature-icon"></i>
+                                <h5>Job Matching</h5>
+                                <p class="text-muted">Compare resumes against job descriptions for eligibility</p>
+                            </div>
+                        </div>
+
+                        <!-- Call to Action -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card" style="background: rgba(102, 126, 234, 0.1); border: 2px solid #667eea;">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-file-alt feature-icon" style="font-size: 2rem;"></i>
+                                        <h6>Resume Category Analysis</h6>
+                                        <p class="text-muted small">Classify resumes into 25 job categories</p>
+                                        <span class="badge bg-primary">Current Page</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card" style="background: rgba(118, 75, 162, 0.1); border: 2px solid #764ba2; cursor: pointer;" onclick="window.location.href='/job_eligibility'">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-briefcase feature-icon" style="font-size: 2rem; color: #764ba2;"></i>
+                                        <h6>Job Eligibility Analysis</h6>
+                                        <p class="text-muted small">Match candidates with job descriptions</p>
+                                        <span class="badge" style="background: #764ba2;">Try Now →</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                showFileInfo(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                showFileInfo(e.target.files[0]);
+            }
+        });
+
+        function showFileInfo(file) {
+            fileName.textContent = file.name;
+            fileInfo.style.display = 'block';
+        }
+
+        // Text analysis
+        async function analyzeText() {
+            const text = document.getElementById('resumeText').value.trim();
+            const resultDiv = document.getElementById('textResult');
+            const predictionDiv = document.getElementById('textPrediction');
+
+            if (!text) {
+                alert('Please enter some resume text first.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/analyze_text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    let html = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-trophy"></i> Predicted Category:</h6>
+                                <span class="badge bg-primary fs-6">${result.predicted_category}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-percentage"></i> Confidence:</h6>
+                                <span class="badge bg-success fs-6">${(result.confidence * 100).toFixed(2)}%</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6><i class="fas fa-list"></i> Top 3 Predictions:</h6>
+                    `;
+                    
+                    result.top_3_predictions.forEach((pred, index) => {
+                        const [category, confidence] = pred;
+                        html += `
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span>${index + 1}. ${category}</span>
+                                <span class="badge bg-secondary">${(confidence * 100).toFixed(2)}%</span>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    predictionDiv.innerHTML = html;
+                    resultDiv.style.display = 'block';
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error analyzing text: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
