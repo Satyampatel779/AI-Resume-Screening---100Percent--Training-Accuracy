@@ -478,12 +478,6 @@ I'm passionate about creating AI solutions that solve real-world problems. This 
 - ✅ **Work independently** and deliver complete solutions
 - ✅ **Write clean, maintainable code** following best practices
 
-### 📧 **Contact Information**
-- **LinkedIn**: [Connect with me on LinkedIn](https://linkedin.com/in/yourprofile)
-- **GitHub**: [View more projects on GitHub](https://github.com/yourusername)  
-- **Email**: your.email@example.com
-- **Portfolio**: [See my complete portfolio](https://yourportfolio.com)
-- **Location**: Available for remote/hybrid/on-site opportunities
 
 ### 🎯 **Looking For**
 - **Machine Learning Engineer** roles
